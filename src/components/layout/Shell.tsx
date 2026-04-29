@@ -177,12 +177,31 @@ export default function Shell({ user }: ShellProps) {
               )}
             </AnimatePresence>
           </div>
-          <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center ring-2 ring-indigo-50 ring-offset-2">
-             {user.photoURL ? (
-               <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
-             ) : (
-               <UserPlaceholder name={user.displayName || 'Doctor'} />
-             )}
+          <div className="relative group/profile">
+            <button className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white shadow-sm overflow-hidden flex items-center justify-center ring-2 ring-indigo-50 ring-offset-2 transition-transform active:scale-95">
+               {user.photoURL ? (
+                 <img src={user.photoURL} alt="Avatar" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+               ) : (
+                 <UserPlaceholder name={user.displayName || 'Doctor'} />
+               )}
+            </button>
+            <div className="absolute top-full right-0 mt-3 w-56 bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden opacity-0 invisible group-hover/profile:opacity-100 group-hover/profile:visible transition-all z-[70] translate-y-2 group-hover/profile:translate-y-0">
+               <div className="p-4 border-b border-slate-50 bg-slate-50/50">
+                  <p className="text-xs font-black text-slate-800 uppercase tracking-tight truncate">{user.displayName || 'Usuario'}</p>
+                  <p className="text-[10px] font-bold text-slate-400 truncate">{user.email}</p>
+               </div>
+               <div className="p-2">
+                  <Link to="/settings" className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-slate-600 hover:bg-slate-50 hover:text-indigo-600 transition-all text-[10px] font-black uppercase tracking-widest">
+                     <Settings className="w-4 h-4" /> Configuración
+                  </Link>
+                  <button 
+                    onClick={logout}
+                    className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-rose-600 hover:bg-rose-50 transition-all text-[10px] font-black uppercase tracking-widest"
+                  >
+                     <LogOut className="w-4 h-4" /> Cerrar Sesión
+                  </button>
+               </div>
+            </div>
           </div>
         </div>
       </nav>

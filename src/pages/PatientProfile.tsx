@@ -13,8 +13,12 @@ import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import Odontogram from '../components/dental/Odontogram';
 import BudgetGenerator from '../components/dental/BudgetGenerator';
+import AppointmentModal from '../components/dental/AppointmentModal';
+import PatientModal from '../components/dental/PatientModal';
 import { medicalService } from '../services/medicalService';
-import { Appointment, Budget, BudgetItem, MedicalDocument } from '../types';
+import { auth } from '../lib/firebase';
+import { Appointment, Budget, BudgetItem, MedicalDocument, Patient } from '../types';
+import { useNotification } from '../components/ui/Notification';
 
 type Tab = 'history' | 'documents' | 'appointments' | 'odontogram' | 'budget';
 
@@ -34,14 +38,19 @@ export default function PatientProfile() {
   const [isCreatingBudget, setIsCreatingBudget] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [isAptModalOpen, setIsAptModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   useEffect(() => {
-    if (id) {
+    if (!id) return;
+
+    let unsubscribeDocuments: (() => void) | undefined;
+
+    const fetchData = async () => {
       setIsLoading(true);
-      medicalService.getPatient(id).then(data => {
-        setPatient(data);
-        setIsLoading(false);
-      });
+      const data = await medicalService.getPatient(id);
+      setPatient(data);
+      setIsLoading(false);
 
       setIsLoadingAppointments(true);
       medicalService.getAppointments(id).then(data => {
@@ -56,18 +65,31 @@ export default function PatientProfile() {
       });
 
       setIsLoadingDocuments(true);
-      const unsubscribe = medicalService.watchDocuments(id, (data) => {
+      unsubscribeDocuments = medicalService.watchDocuments(id, (data) => {
         setDocuments(data);
         setIsLoadingDocuments(false);
-      });
+      }) as any;
+    };
 
-      return () => {
-        if (typeof unsubscribe === 'function') {
-          unsubscribe();
-        }
-      };
-    }
-  }, [id]);
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        fetchData();
+      }
+    });
+
+    return () => {
+      unsubscribeAuth();
+      if (typeof unsubscribeDocuments === 'function') {
+        unsubscribeDocuments();
+      }
+    };
+  }, [id, showNotification]);
+
+  const loadPatientData = async () => {
+    if (!id || !auth.currentUser) return;
+    const data = await medicalService.getPatient(id);
+    setPatient(data);
+  };
 
   const handleDelete = async () => {
     if (!id) return;
@@ -92,6 +114,18 @@ export default function PatientProfile() {
     { id: 'documents', label: 'Radiografías', icon: ImageIcon },
     { id: 'appointments', label: 'Citas', icon: Calendar },
   ];
+
+  const calculateAge = (birthDate: string) => {
+    if (!birthDate) return 'N/A';
+    const birth = new Date(birthDate);
+    const today = new Date();
+    let age = today.getFullYear() - birth.getFullYear();
+    const month = today.getMonth() - birth.getMonth();
+    if (month < 0 || (month === 0 && today.getDate() < birth.getDate())) {
+      age--;
+    }
+    return age;
+  };
 
   if (isLoading) {
     return (
@@ -138,15 +172,21 @@ export default function PatientProfile() {
           >
              <Trash2 className="w-5 h-5" />
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white border border-slate-200 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm">
+          <button 
+            onClick={() => setIsEditModalOpen(true)}
+            className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-white border border-slate-200 rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest text-slate-600 hover:bg-slate-50 transition-all shadow-sm"
+          >
             <Edit2 className="w-4 h-4" />
             <span className="hidden md:inline">Editar Perfil</span>
             <span className="md:hidden">Editar</span>
           </button>
-          <button className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100">
-            <Plus className="w-5 h-5" />
-            <span className="hidden md:inline">Nueva Consulta</span>
-            <span className="md:hidden">Consulta</span>
+          <button 
+             onClick={() => setIsAptModalOpen(true)}
+             className="flex-1 sm:flex-none flex items-center justify-center gap-2 px-6 py-4 bg-indigo-600 text-white rounded-2xl text-[10px] md:text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100"
+          >
+            <Calendar className="w-5 h-5" />
+            <span className="hidden md:inline">Programar Cita</span>
+            <span className="md:hidden">Cita</span>
           </button>
         </div>
       </div>
@@ -160,7 +200,7 @@ export default function PatientProfile() {
             </div>
             <div className="relative z-10">
                 <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-1">{patient.name}</h2>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter mb-8">ID: {patient.dni} • {patient.age} años</p>
+                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter mb-8">ID: {patient.dni} • {calculateAge(patient.birthDate)} años</p>
                 
                 <div className="space-y-4 text-left">
                   <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
@@ -192,7 +232,7 @@ export default function PatientProfile() {
           <div className="bg-white rounded-3xl border border-slate-200 p-6">
              <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Observaciones Críticas</p>
              <p className="text-xs text-slate-600 leading-relaxed italic border-l-2 border-indigo-100 pl-4">
-                "{patient.observations}"
+                {patient.observations ? `"${patient.observations}"` : "Sin observaciones registradas."}
              </p>
           </div>
 
@@ -281,7 +321,13 @@ export default function PatientProfile() {
                    )
                  )}
                 {activeTab === 'documents' && <DocumentsGallery documents={documents} isLoading={isLoadingDocuments} />}
-                {activeTab === 'appointments' && <AppointmentsTable appointments={appointments} isLoading={isLoadingAppointments} />}
+                {activeTab === 'appointments' && (
+                  <AppointmentsTable 
+                    appointments={appointments} 
+                    isLoading={isLoadingAppointments} 
+                    onNew={() => setIsAptModalOpen(true)} 
+                  />
+                )}
              </motion.div>
           </AnimatePresence>
         </div>
@@ -324,6 +370,29 @@ export default function PatientProfile() {
           </div>
         )}
       </AnimatePresence>
+
+      {patient && (
+        <AppointmentModal 
+          isOpen={isAptModalOpen}
+          onClose={() => setIsAptModalOpen(false)}
+          onSuccess={async () => {
+            setIsLoadingAppointments(true);
+            const data = await medicalService.getAppointments(id!);
+            setAppointments(data);
+            setIsLoadingAppointments(false);
+          }}
+          selectedPatient={patient}
+        />
+      )}
+
+      {patient && (
+        <PatientModal 
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSuccess={loadPatientData}
+          patient={patient}
+        />
+      )}
     </div>
   );
 }
@@ -526,7 +595,7 @@ function DocumentsGallery({ documents, isLoading }: { documents: MedicalDocument
   );
 }
 
-function AppointmentsTable({ appointments, isLoading }: { appointments: Appointment[], isLoading: boolean }) {
+function AppointmentsTable({ appointments, isLoading, onNew }: { appointments: Appointment[], isLoading: boolean, onNew: () => void }) {
   const statusConfig = {
     'SCHEDULED': { label: 'Confirmada', color: 'emerald', icon: CheckCircle2 },
     'COMPLETED': { label: 'Completada', color: 'slate', icon: CheckCircle2 },
@@ -537,7 +606,10 @@ function AppointmentsTable({ appointments, isLoading }: { appointments: Appointm
     <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-6 md:p-10">
        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-10">
           <h3 className="text-xl font-bold text-slate-800 uppercase tracking-tighter">Historial de Citas</h3>
-          <button className="w-full sm:w-auto px-6 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-sm">
+          <button 
+            onClick={onNew}
+            className="w-full sm:w-auto px-6 py-3 bg-indigo-50 text-indigo-600 border border-indigo-100 rounded-xl text-xs font-black uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all shadow-sm"
+          >
              Agendar Nueva
           </button>
        </div>

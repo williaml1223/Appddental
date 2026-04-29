@@ -89,6 +89,6 @@
     "/patients/{patientId}/documents": { "schema": "MedicalDocument", "description": "Uploaded media metadata" },
     "/patients/{patientId}/odontograms": { "schema": "Odontogram", "description": "Odontogram snapshots" },
     "/patients/{patientId}/budgets": { "schema": "Budget", "description": "Treatment budgets" },
-    "/patients/{patientId}/appointments": { "schema": "Appointment", "description": "Patient appointments" }
+    "/appointments": { "schema": "Appointment", "description": "Global appointments list" }
   }
 }

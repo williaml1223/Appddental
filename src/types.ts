@@ -20,12 +20,17 @@ export interface Patient {
   phone: string;
   email: string;
   address?: string;
+  bloodType?: string;
+  allergies?: string;
+  observations?: string;
+  lastVisit?: string;
   createdAt: number;
 }
 
 export interface Appointment {
   id: string;
   patientId: string;
+  patientName?: string;
   dentistId: string;
   date: number; // Unix timestamp
   reason: string;

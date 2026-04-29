@@ -3,6 +3,7 @@ import {
   doc, 
   addDoc, 
   setDoc,
+  updateDoc,
   getDoc, 
   getDocs, 
   deleteDoc,
@@ -95,6 +96,15 @@ export const medicalService = {
       await deleteDoc(doc(db, path, id));
     } catch (error) {
       handleFirestoreError(error, OperationType.DELETE, path);
+    }
+  },
+
+  async updatePatient(id: string, data: Partial<Patient>) {
+    const path = 'patients';
+    try {
+      await updateDoc(doc(db, path, id), data);
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
     }
   },
 
@@ -220,14 +230,60 @@ export const medicalService = {
 
   // --- Appointments ---
   async getAppointments(patientId: string): Promise<Appointment[]> {
-    const path = `patients/${patientId}/appointments`;
+    const path = 'appointments';
     try {
-      const q = query(collection(db, path), orderBy('date', 'desc'));
+      if (!auth.currentUser) return [];
+      const q = query(
+        collection(db, path), 
+        where('patientId', '==', patientId),
+        where('dentistId', '==', auth.currentUser.uid),
+        orderBy('date', 'desc')
+      );
       const snapshot = await getDocs(q);
       return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
     } catch (error) {
       handleFirestoreError(error, OperationType.LIST, path);
       return [];
+    }
+  },
+
+  async getAllAppointments(): Promise<Appointment[]> {
+    const path = 'appointments';
+    try {
+      if (!auth.currentUser) return [];
+      const q = query(
+        collection(db, path), 
+        where('dentistId', '==', auth.currentUser.uid),
+        orderBy('date', 'asc')
+      );
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Appointment));
+    } catch (error) {
+      handleFirestoreError(error, OperationType.LIST, path);
+      return [];
+    }
+  },
+
+  async createAppointment(aptData: Omit<Appointment, 'id' | 'dentistId'>) {
+    const path = 'appointments';
+    try {
+      if (!auth.currentUser) throw new Error('No auth user');
+      const docRef = await addDoc(collection(db, path), {
+        ...aptData,
+        dentistId: auth.currentUser.uid
+      });
+      return docRef.id;
+    } catch (error) {
+      handleFirestoreError(error, OperationType.CREATE, path);
+    }
+  },
+
+  async updateAppointmentStatus(aptId: string, status: string) {
+    const path = `appointments/${aptId}`;
+    try {
+      await setDoc(doc(db, 'appointments', aptId), { status }, { merge: true });
+    } catch (error) {
+      handleFirestoreError(error, OperationType.UPDATE, path);
     }
   }
 };

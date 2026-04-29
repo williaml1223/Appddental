@@ -1,6 +1,6 @@
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+import { getFirestore, initializeFirestore } from 'firebase/firestore';
 import config from '../../firebase-applet-config.json';
 
 const firebaseConfig = (!config.apiKey || config.apiKey === 'placeholder') 
@@ -16,7 +16,11 @@ const app = getApps().length === 0
   : getApps()[0];
 
 export const auth = getAuth(app);
-export const db = getFirestore(app, (config as any).firestoreDatabaseId); 
+
+// Use initializeFirestore to enable long polling, which is more reliable in this environment
+export const db = initializeFirestore(app, {
+  experimentalForceLongPolling: true,
+}, (config as any).firestoreDatabaseId);
 export const googleProvider = new GoogleAuthProvider();
 
 export const loginWithGoogle = async () => {

@@ -4,6 +4,8 @@ import Shell from './components/layout/Shell';
 import Dashboard from './pages/Dashboard';
 import Patients from './pages/Patients';
 import PatientProfile from './pages/PatientProfile';
+import Appointments from './pages/Appointments';
+import Settings from './pages/Settings';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
@@ -18,7 +20,16 @@ export default function App() {
       setUser(user);
       setLoading(false);
     });
-    return unsubscribe;
+
+    // Fallback timer: if auth doesn't respond in 4 seconds, show the UI anyway
+    const timer = setTimeout(() => {
+      setLoading(false);
+    }, 4000);
+
+    return () => {
+      unsubscribe();
+      clearTimeout(timer);
+    };
   }, []);
 
   if (loading) {
@@ -40,6 +51,8 @@ export default function App() {
             <Route index element={<Dashboard />} />
             <Route path="patients" element={<Patients />} />
             <Route path="patients/:id" element={<PatientProfile />} />
+            <Route path="appointments" element={<Appointments />} />
+            <Route path="settings" element={<Settings />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Route>
         </Routes>

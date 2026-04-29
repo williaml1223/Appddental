@@ -62,9 +62,9 @@ service cloud.firestore {
              data.createdAt is number;
     }
 
-    function isValidAppointment(data, patientId) {
-      return data.keys().hasAll(['patientId', 'dentistId', 'date', 'reason', 'status']) &&
-             data.patientId == patientId &&
+    function isValidAppointment(data) {
+      return data.keys().hasAll(['patientId', 'patientName', 'dentistId', 'date', 'reason', 'status']) &&
+             data.keys().size() == 6 &&
              data.dentistId == request.auth.uid &&
              data.date is number &&
              data.reason is string && data.reason.size() > 0 && data.reason.size() < 1000 &&
@@ -104,11 +104,18 @@ service cloud.firestore {
         allow update: if isSignedIn() && isDentistOfPatient(patientId) && isValidBudget(incoming()) &&
                         incoming().dentistId == existing().dentistId;
       }
+    }
 
-      match /appointments/{aptId} {
-        allow create: if isSignedIn() && isDentistOfPatient(patientId) && isValidAppointment(incoming(), patientId);
-        allow list, get: if isSignedIn() && isDentistOfPatient(patientId);
-      }
+    match /appointments/{aptId} {
+      allow create: if isSignedIn() && isValidAppointment(incoming());
+      allow list: if isSignedIn() && resource.data.dentistId == request.auth.uid;
+      allow get: if isSignedIn() && resource.data.dentistId == request.auth.uid;
+      allow update: if isSignedIn() && (
+        existing().dentistId == request.auth.uid &&
+        incoming().dentistId == existing().dentistId &&
+        incoming().diff(existing()).affectedKeys().hasOnly(['status', 'date', 'reason'])
+      );
+      allow delete: if isSignedIn() && existing().dentistId == request.auth.uid;
     }
   }
 }

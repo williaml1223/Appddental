@@ -4,12 +4,14 @@ import { Search, Filter, MoreHorizontal, UserPlus, FileText, ChevronRight, Phone
 import { cn } from '../lib/utils';
 import { Link } from 'react-router-dom';
 import { medicalService } from '../services/medicalService';
+import { auth } from '../lib/firebase';
 import { Patient } from '../types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 
 import { EmptyState } from '../components/ui/EmptyState';
 import { useNotification } from '../components/ui/Notification';
+import PatientModal from '../components/dental/PatientModal';
 
 export default function Patients() {
   const { showNotification } = useNotification();
@@ -17,11 +19,6 @@ export default function Patients() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSaving, setIsSaving] = useState(false);
-
-  useEffect(() => {
-    loadPatients();
-  }, []);
 
   const loadPatients = async () => {
     setIsLoading(true);
@@ -30,37 +27,21 @@ export default function Patients() {
     setIsLoading(false);
   };
 
+  useEffect(() => {
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        loadPatients();
+      }
+    });
+
+    return () => unsubscribeAuth();
+  }, []);
+
   const filteredPatients = patients.filter(p => 
     p.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
     p.lastName.toLowerCase().includes(searchTerm.toLowerCase()) ||
     p.dni.includes(searchTerm)
   );
-
-  const handleRegister = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
-    setIsSaving(true);
-    const formData = new FormData(e.currentTarget);
-    
-    try {
-      await medicalService.createPatient({
-        name: formData.get('name') as string,
-        lastName: formData.get('lastName') as string,
-        dni: formData.get('dni') as string,
-        phone: formData.get('phone') as string,
-        email: formData.get('email') as string,
-        birthDate: formData.get('birthDate') as string,
-        address: formData.get('address') as string,
-      });
-      setIsModalOpen(false);
-      showNotification('success', 'Paciente registrado correctamente');
-      loadPatients();
-    } catch (error) {
-      console.error(error);
-      showNotification('error', 'Error al registrar el paciente');
-    } finally {
-      setIsSaving(false);
-    }
-  };
 
   return (
     <div className="space-y-10">
@@ -174,79 +155,11 @@ export default function Patients() {
         ) : null}
       </div>
 
-      {/* Register Modal */}
-      <AnimatePresence>
-        {isModalOpen && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 md:p-6 bg-slate-900/60 backdrop-blur-sm">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 30 }}
-              className="bg-white rounded-[2rem] md:rounded-[3rem] w-full max-w-2xl shadow-2xl relative overflow-hidden flex flex-col max-h-[90vh]"
-            >
-              <div className="bg-indigo-600 p-6 md:p-8 flex items-center justify-between text-white shrink-0">
-                 <div>
-                    <h3 className="text-xl md:text-2xl font-black tracking-tighter uppercase mb-1">Nuevo Paciente</h3>
-                    <p className="text-[9px] md:text-[10px] font-black text-white/60 uppercase tracking-widest">Apertura de Expediente Clínico</p>
-                 </div>
-                 <button onClick={() => setIsModalOpen(false)} className="p-2 md:p-3 bg-white/10 hover:bg-white/20 rounded-2xl transition-all">
-                    <X className="w-5 h-5 md:w-6 md:h-6" />
-                 </button>
-              </div>
-
-              <form onSubmit={handleRegister} className="p-6 md:p-8 space-y-6 overflow-y-auto">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Nombre</label>
-                    <input name="name" required className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 transition-all font-bold" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Apellidos</label>
-                    <input name="lastName" required className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 transition-all font-bold" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">DNI / Identificación</label>
-                    <input name="dni" required className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 transition-all font-bold" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Fecha de Nacimiento</label>
-                    <input name="birthDate" type="date" required className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 transition-all font-bold" />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Teléfono</label>
-                    <input name="phone" className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 transition-all font-bold" />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Email</label>
-                    <input name="email" type="email" className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 transition-all font-bold" />
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dirección Residencia</label>
-                  <input name="address" className="w-full px-4 py-3 bg-slate-50 border-none rounded-xl text-sm focus:ring-2 focus:ring-indigo-100 transition-all font-bold" />
-                </div>
-
-                <div className="pt-4 flex flex-col sm:flex-row gap-4 shrink-0">
-                  <button type="button" onClick={() => setIsModalOpen(false)} className="flex-1 py-4 bg-slate-100 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-all">
-                    Cancelar
-                  </button>
-                  <button type="submit" disabled={isSaving} className="flex-[2] py-4 bg-indigo-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center justify-center gap-3">
-                    {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />}
-                    {isSaving ? 'Guardando...' : 'Confirmar Registro'}
-                  </button>
-                </div>
-              </form>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      <PatientModal 
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        onSuccess={loadPatients}
+      />
     </div>
   );
 }

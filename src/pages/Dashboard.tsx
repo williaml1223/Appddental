@@ -6,13 +6,18 @@ import {
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { medicalService } from '../services/medicalService';
-import { Patient, Appointment, Budget } from '../types';
+import { auth } from '../lib/firebase';
+import { Patient, Appointment, Budget, AppointmentStatus } from '../types';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
 import { cn } from '../lib/utils';
 import { EmptyState } from '../components/ui/EmptyState';
+import AppointmentModal from '../components/dental/AppointmentModal';
+import PatientModal from '../components/dental/PatientModal';
+import { useNotification } from '../components/ui/Notification';
 
 export default function Dashboard() {
+  const { showNotification } = useNotification();
   const [stats, setStats] = useState({
     totalPatients: 0,
     todayAppointments: 0,
@@ -22,35 +27,66 @@ export default function Dashboard() {
   const [recentPatients, setRecentPatients] = useState<Patient[]>([]);
   const [todayApts, setTodayApts] = useState<Appointment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAptModalOpen, setIsAptModalOpen] = useState(false);
+  const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
+
+  const loadTodayApts = async () => {
+    setIsLoading(true);
+    try {
+      const appointments = await medicalService.getAllAppointments();
+      const today = new Date();
+      const filtered = appointments.filter(a => isSameDay(new Date(a.date), today));
+      setTodayApts(filtered);
+      setStats(prev => ({ ...prev, todayAppointments: filtered.length }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    setIsLoading(true);
-    
-    // Watch patients for count and recent list
-    const unsubscribePatients = medicalService.watchPatients((patients) => {
-      setRecentPatients(patients.slice(0, 5));
-      setStats(prev => ({ ...prev, totalPatients: patients.length }));
-      setIsLoading(false);
-    });
+    let unsubscribePatients: () => void = () => {};
 
-    // For today's appointments, we'll fetch them normally for now
-    const loadTodayApts = async () => {
-      try {
-        const patients = await medicalService.getPatients();
-        // Just mock some today's data for visual purposes if database is empty
-        // In real use, we query actual appointments for today
-        setTodayApts([
-          { id: '1', patientId: patients[0]?.id || 'p1', dentistId: 'd1', date: Date.now() + 1000 * 60 * 60, reason: 'Limpieza Profunda', status: 'SCHEDULED' },
-          { id: '2', patientId: patients[1]?.id || 'p2', dentistId: 'd1', date: Date.now() + 1000 * 60 * 60 * 3, reason: 'Ortodoncia - Control', status: 'SCHEDULED' },
-        ].filter(a => a.patientId !== 'p1' && a.patientId !== 'p2') as Appointment[]);
-      } catch (e) {
-        console.error(e);
-      }
+    const setupWatchers = () => {
+      if (!auth.currentUser) return;
+      
+      setIsLoading(true);
+      unsubscribePatients = medicalService.watchPatients((patients) => {
+        setRecentPatients(patients.slice(0, 5));
+        setStats(prev => ({ ...prev, totalPatients: patients.length }));
+      });
+      loadTodayApts();
     };
 
-    loadTodayApts();
-    return () => unsubscribePatients();
+    // Watch for auth changes
+    const unsubscribeAuth = auth.onAuthStateChanged((user) => {
+      if (user) {
+        setupWatchers();
+      }
+    });
+
+    return () => {
+      unsubscribePatients();
+      unsubscribeAuth();
+    };
   }, []);
+
+  const handleStatusUpdate = async (id: string, status: AppointmentStatus) => {
+    try {
+      await medicalService.updateAppointmentStatus(id, status);
+      showNotification('success', `Cita ${status === AppointmentStatus.COMPLETED ? 'completada' : 'cancelada'}`);
+      loadTodayApts();
+    } catch (e) {
+      showNotification('error', 'Error al actualizar la cita');
+    }
+  };
+
+  const isSameDay = (d1: Date, d2: Date) => {
+    return d1.getFullYear() === d2.getFullYear() &&
+           d1.getMonth() === d2.getMonth() &&
+           d1.getDate() === d2.getDate();
+  };
 
   return (
     <div className="space-y-10">
@@ -70,7 +106,10 @@ export default function Dashboard() {
           >
             Ver Pacientes
           </Link>
-          <button className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2">
+          <button 
+            onClick={() => setIsAptModalOpen(true)}
+            className="px-6 py-3 bg-indigo-600 text-white rounded-2xl text-xs font-black uppercase tracking-widest hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-100 flex items-center gap-2"
+          >
             <Calendar className="w-4 h-4" /> Nueva Cita
           </button>
         </div>
@@ -133,23 +172,31 @@ export default function Dashboard() {
                       <span className="text-[9px] md:text-[10px] font-black uppercase">{format(apt.date, 'MMM')}</span>
                       <span className="text-xl md:text-2xl font-black">{format(apt.date, 'dd')}</span>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight group-hover:text-indigo-600 transition-colors truncate">{apt.reason}</h4>
+                  <div className="flex-1 min-w-0">
+                      <h4 className="text-base md:text-lg font-black text-slate-800 uppercase tracking-tight group-hover:text-indigo-600 transition-colors truncate">{apt.patientName || 'Paciente'}</h4>
                       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 mt-1">
                         <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-widest whitespace-nowrap">
                           <Clock className="w-3 h-3" /> {format(apt.date, 'hh:mm a')}
                         </span>
                         <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1.5 uppercase tracking-widest whitespace-nowrap">
-                          <UserCheck className="w-3 h-3" /> ID: {apt.patientId.slice(0, 5)}
+                          <TrendingUp className="w-3 h-3" /> {apt.reason}
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="flex gap-2 justify-end pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-50">
-                    <button className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:text-emerald-600 hover:bg-emerald-50 transition-all" title="Completar">
+                    <button 
+                      onClick={() => handleStatusUpdate(apt.id, AppointmentStatus.COMPLETED)}
+                      className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:text-emerald-600 hover:bg-emerald-50 transition-all" 
+                      title="Completar"
+                    >
                       <CheckCircle2 className="w-5 h-5" />
                     </button>
-                    <button className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:text-rose-600 hover:bg-rose-50 transition-all" title="Cancelar">
+                    <button 
+                      onClick={() => handleStatusUpdate(apt.id, AppointmentStatus.CANCELLED)}
+                      className="p-3 bg-slate-50 text-slate-400 rounded-2xl hover:text-rose-600 hover:bg-rose-50 transition-all" 
+                      title="Cancelar"
+                    >
                       <AlertCircle className="w-5 h-5" />
                     </button>
                   </div>
@@ -162,7 +209,7 @@ export default function Dashboard() {
                 description="No tienes pacientes programados para el resto del día."
                 action={{
                   label: "Programar Cita",
-                  onClick: () => {} // Link logic
+                  onClick: () => setIsAptModalOpen(true)
                 }}
               />
             )}
@@ -206,12 +253,25 @@ export default function Dashboard() {
                 <p className="text-xs font-bold text-slate-300 italic">No hay pacientes registrados</p>
               </div>
             )}
-            <button className="w-full py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase text-indigo-600 tracking-widest hover:bg-indigo-600 hover:text-white transition-all">
+            <button 
+              onClick={() => setIsPatientModalOpen(true)}
+              className="w-full py-4 bg-slate-50 border border-slate-100 rounded-2xl text-[10px] font-black uppercase text-indigo-600 tracking-widest hover:bg-indigo-600 hover:text-white transition-all"
+            >
               + Registrar Paciente
             </button>
           </div>
         </div>
       </div>
+      <AppointmentModal 
+        isOpen={isAptModalOpen}
+        onClose={() => setIsAptModalOpen(false)}
+        onSuccess={loadTodayApts}
+      />
+      <PatientModal 
+        isOpen={isPatientModalOpen}
+        onClose={() => setIsPatientModalOpen(false)}
+        onSuccess={() => {}} // stats will update via firestore watcher
+      />
     </div>
   );
 }
