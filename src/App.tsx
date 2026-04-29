@@ -6,6 +6,7 @@ import Patients from './pages/Patients';
 import PatientProfile from './pages/PatientProfile';
 import Appointments from './pages/Appointments';
 import Settings from './pages/Settings';
+import Landing from './pages/Landing';
 import { auth } from './lib/firebase';
 import { onAuthStateChanged, User } from 'firebase/auth';
 
@@ -47,14 +48,21 @@ export default function App() {
     <NotificationProvider>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<Shell user={user} />}>
-            <Route index element={<Dashboard />} />
-            <Route path="patients" element={<Patients />} />
-            <Route path="patients/:id" element={<PatientProfile />} />
-            <Route path="appointments" element={<Appointments />} />
-            <Route path="settings" element={<Settings />} />
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Route>
+          {!user ? (
+            <>
+              <Route path="/" element={<Landing />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </>
+          ) : (
+            <Route path="/" element={<Shell user={user} />}>
+              <Route index element={<Dashboard />} />
+              <Route path="patients" element={<Patients />} />
+              <Route path="patients/:id" element={<PatientProfile />} />
+              <Route path="appointments" element={<Appointments />} />
+              <Route path="settings" element={<Settings />} />
+              <Route path="*" element={<Navigate to="/" replace />} />
+            </Route>
+          )}
         </Routes>
       </BrowserRouter>
     </NotificationProvider>

@@ -58,40 +58,7 @@ export default function Shell({ user }: ShellProps) {
     { icon: Settings, label: 'Configuración', path: '/settings' },
   ];
 
-  if (!user) {
-    return (
-      <div className="min-h-screen bg-slate-50 flex flex-col items-center justify-center p-6 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-indigo-100 via-slate-50 to-emerald-50">
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="max-w-md w-full bg-white rounded-3xl shadow-xl p-10 border border-slate-100"
-        >
-          <div className="flex justify-center mb-8">
-            <div className="w-16 h-16 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-lg shadow-indigo-200">
-              <ShieldCheck className="text-white w-10 h-10" />
-            </div>
-          </div>
-          <h1 className="text-3xl font-bold text-center text-slate-900 mb-2 font-sans tracking-tight">ODONTOCLOUD</h1>
-          <p className="text-slate-500 text-center mb-10 font-sans text-sm">
-            Gestión segura y moderna de historias clínicas odontológicas.
-          </p>
-          <button
-            onClick={loginWithGoogle}
-            className="w-full flex items-center justify-center gap-3 bg-indigo-600 border border-indigo-700 px-4 py-4 rounded-xl font-bold text-white hover:bg-indigo-700 transition-all shadow-md hover:shadow-lg"
-          >
-            <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" className="w-5 h-5 brightness-200 contrast-200" alt="Google" />
-            Ingresar con Google
-          </button>
-          <div className="mt-10 pt-8 border-t border-slate-100">
-             <div className="flex items-center justify-center gap-2 mb-2">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Encriptación AES-256 Activa</p>
-             </div>
-          </div>
-        </motion.div>
-      </div>
-    );
-  }
+  if (!user) return null;
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-900 flex flex-col overflow-hidden">
