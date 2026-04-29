@@ -191,71 +191,79 @@ export default function PatientProfile() {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+      <div className={cn(
+        "grid gap-10",
+        activeTab === 'odontogram' ? "grid-cols-1" : "grid-cols-1 lg:grid-cols-12"
+      )}>
         {/* Sleek Sidebar Profile */}
-        <aside className="lg:col-span-3 space-y-8 flex flex-col">
-          <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 text-center relative overflow-hidden group">
-            <div className="w-32 h-32 bg-indigo-50 rounded-[2rem] mx-auto mb-6 flex items-center justify-center text-4xl font-black text-indigo-600 border-4 border-white shadow-xl relative z-10 group-hover:scale-105 transition-transform duration-500">
-               {patient.name.split(' ').map(n => n[0]).join('')}
-            </div>
-            <div className="relative z-10">
-                <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-1">{patient.name}</h2>
-                <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter mb-8">ID: {patient.dni} • {calculateAge(patient.birthDate)} años</p>
-                
-                <div className="space-y-4 text-left">
-                  <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100"><Phone className="w-4 h-4 text-slate-400" /></div>
-                    <span>{patient.phone}</span>
+        {activeTab !== 'odontogram' && (
+          <aside className="lg:col-span-3 space-y-8 flex flex-col">
+            <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm p-8 text-center relative overflow-hidden group">
+              <div className="w-32 h-32 bg-indigo-50 rounded-[2rem] mx-auto mb-6 flex items-center justify-center text-4xl font-black text-indigo-600 border-4 border-white shadow-xl relative z-10 group-hover:scale-105 transition-transform duration-500">
+                 {patient.name.split(' ').map(n => n[0]).join('')}
+              </div>
+              <div className="relative z-10">
+                  <h2 className="text-2xl font-black text-slate-800 tracking-tight mb-1">{patient.name}</h2>
+                  <p className="text-xs font-bold text-slate-400 uppercase tracking-tighter mb-8">ID: {patient.dni} • {calculateAge(patient.birthDate)} años</p>
+                  
+                  <div className="space-y-4 text-left">
+                    <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100"><Phone className="w-4 h-4 text-slate-400" /></div>
+                      <span>{patient.phone}</span>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
+                      <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100"><Mail className="w-4 h-4 text-slate-400" /></div>
+                      <span className="truncate">{patient.email}</span>
+                    </div>
                   </div>
-                  <div className="flex items-center gap-4 text-xs font-bold text-slate-500">
-                    <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-100"><Mail className="w-4 h-4 text-slate-400" /></div>
-                    <span className="truncate">{patient.email}</span>
-                  </div>
-                </div>
+              </div>
+              <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-[60px] opacity-40 translate-x-1/2 -translate-y-1/2"></div>
             </div>
-            <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50 rounded-full blur-[60px] opacity-40 translate-x-1/2 -translate-y-1/2"></div>
-          </div>
 
-          <div className="space-y-4">
-            <div className="bg-indigo-50 rounded-2xl p-5 border border-indigo-100 shadow-sm shadow-indigo-50/50">
-              <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1.5">Tipo de Sangre</p>
-              <p className="text-lg font-black text-indigo-900 tracking-tight">{patient.bloodType}</p>
+            <div className="space-y-4">
+              <div className="bg-indigo-50 rounded-2xl p-5 border border-indigo-100 shadow-sm shadow-indigo-50/50">
+                <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-1.5">Tipo de Sangre</p>
+                <p className="text-lg font-black text-indigo-900 tracking-tight">{patient.bloodType}</p>
+              </div>
+              <div className="bg-rose-50 rounded-2xl p-5 border border-rose-100 shadow-sm shadow-rose-50/50">
+                <p className="text-[10px] font-black uppercase text-rose-400 tracking-widest mb-1.5 flex items-center gap-2">
+                   <AlertCircle className="w-3 h-3" /> Alergias
+                </p>
+                <p className="text-sm font-bold text-rose-700 leading-snug">{patient.allergies}</p>
+              </div>
             </div>
-            <div className="bg-rose-50 rounded-2xl p-5 border border-rose-100 shadow-sm shadow-rose-50/50">
-              <p className="text-[10px] font-black uppercase text-rose-400 tracking-widest mb-1.5 flex items-center gap-2">
-                 <AlertCircle className="w-3 h-3" /> Alergias
-              </p>
-              <p className="text-sm font-bold text-rose-700 leading-snug">{patient.allergies}</p>
+
+            <div className="bg-white rounded-3xl border border-slate-200 p-6">
+               <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Observaciones Críticas</p>
+               <p className="text-xs text-slate-600 leading-relaxed italic border-l-2 border-indigo-100 pl-4">
+                  {patient.observations ? `"${patient.observations}"` : "Sin observaciones registradas."}
+               </p>
             </div>
-          </div>
 
-          <div className="bg-white rounded-3xl border border-slate-200 p-6">
-             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">Observaciones Críticas</p>
-             <p className="text-xs text-slate-600 leading-relaxed italic border-l-2 border-indigo-100 pl-4">
-                {patient.observations ? `"${patient.observations}"` : "Sin observaciones registradas."}
-             </p>
-          </div>
-
-          <div className="space-y-3">
-             <a 
-               href={`https://wa.me/${patient.phone.replace(/\D/g, '')}`}
-               target="_blank"
-               rel="noreferrer"
-               className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100"
-             >
-               <Phone className="w-4 h-4" /> WhatsApp
-             </a>
-             <a 
-               href={`mailto:${patient.email}`}
-               className="w-full py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
-             >
-               <Mail className="w-4 h-4" /> Enviar Correo
-             </a>
-          </div>
-        </aside>
+            <div className="space-y-3">
+               <a 
+                 href={`https://wa.me/${patient.phone.replace(/\D/g, '')}`}
+                 target="_blank"
+                 rel="noreferrer"
+                 className="w-full py-4 bg-emerald-500 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-emerald-600 transition-all flex items-center justify-center gap-2 shadow-lg shadow-emerald-100"
+               >
+                 <Phone className="w-4 h-4" /> WhatsApp
+               </a>
+               <a 
+                 href={`mailto:${patient.email}`}
+                 className="w-full py-4 bg-white border border-slate-200 text-slate-600 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-all flex items-center justify-center gap-2 shadow-sm"
+               >
+                 <Mail className="w-4 h-4" /> Enviar Correo
+               </a>
+            </div>
+          </aside>
+        )}
 
         {/* Main Content Area */}
-        <div className="lg:col-span-9 space-y-10 order-1 lg:order-2">
+        <div className={cn(
+          "space-y-10 order-1 lg:order-2",
+          activeTab === 'odontogram' ? "lg:col-span-12" : "lg:col-span-9"
+        )}>
           {/* Custom Sleek Tabs */}
           <div className="flex overflow-x-auto no-scrollbar gap-6 md:gap-8 border-b border-slate-200 -mx-4 px-4 md:mx-0 md:px-0">
             {tabs.map((tab) => {
