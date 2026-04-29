@@ -1,0 +1,13 @@
+{
+  "name": "OdontoCloud - Gestión de Historias Clínicas",
+  "description": "Plataforma integral para odontólogos: gestión de pacientes, historias clínicas, radiografías, recetas y evolución clínica.",
+  "requestFramePermissions": [
+    "camera"
+  ],
+  "majorCapabilities": [
+    "Gestión de Pacientes",
+    "Historias Clínicas Digitales",
+    "Repositorio de Radiografías",
+    "Control de Citas"
+  ]
+}

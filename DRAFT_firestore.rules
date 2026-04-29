@@ -1,0 +1,112 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // 0. Global Deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // 0.1 Primitives
+    function isSignedIn() { return request.auth != null; }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+
+    // Master Gate Helper
+    function isDentist(dentistId) {
+      return dentistId == request.auth.uid;
+    }
+
+    function isDentistOfPatient(patientId) {
+      return get(/databases/$(database)/documents/patients/$(patientId)).data.dentistId == request.auth.uid;
+    }
+
+    // --- Entity Validations ---
+
+    function isValidPatient(data) {
+      return data.keys().hasAll(['name', 'lastName', 'dni', 'dentistId', 'createdAt']) &&
+             data.name is string && data.name.size() > 0 && data.name.size() < 100 &&
+             data.lastName is string && data.lastName.size() > 0 && data.lastName.size() < 100 &&
+             data.dni is string && data.dni.size() > 0 && data.dni.size() < 20 &&
+             data.dentistId == request.auth.uid &&
+             data.createdAt is number;
+    }
+
+    function isValidRecord(data) {
+      return data.keys().hasAll(['date', 'diagnosis']) &&
+             data.date is number &&
+             data.diagnosis is string && data.diagnosis.size() > 0 && data.diagnosis.size() < 5000;
+    }
+
+    function isValidDocument(data, patientId) {
+       return data.keys().hasAll(['name', 'type', 'patientId', 'createdAt']) &&
+              data.name is string && data.name.size() > 0 && data.name.size() < 255 &&
+              data.type in ['XRAY', 'PHOTO', 'LAB', 'OTHER'] &&
+              data.patientId == patientId &&
+              data.createdAt is number;
+    }
+
+    function isValidOdontogram(data) {
+      return data.keys().hasAll(['markings', 'dentistId', 'updatedAt']) &&
+             data.markings is list &&
+             data.dentistId == request.auth.uid &&
+             data.updatedAt is number;
+    }
+
+    function isValidBudget(data) {
+      return data.keys().hasAll(['total', 'status', 'dentistId', 'createdAt']) &&
+             data.total is number &&
+             data.status in ['DRAFT', 'SENT', 'ACCEPTED', 'REJECTED'] &&
+             data.dentistId == request.auth.uid &&
+             data.createdAt is number;
+    }
+
+    function isValidAppointment(data, patientId) {
+      return data.keys().hasAll(['patientId', 'dentistId', 'date', 'reason', 'status']) &&
+             data.patientId == patientId &&
+             data.dentistId == request.auth.uid &&
+             data.date is number &&
+             data.reason is string && data.reason.size() > 0 && data.reason.size() < 1000 &&
+             data.status in ['SCHEDULED', 'COMPLETED', 'CANCELLED'];
+    }
+
+    // --- Collection Routes ---
+
+    match /patients/{patientId} {
+      allow create: if isSignedIn() && isValidPatient(incoming());
+      allow get: if isSignedIn() && isDentist(existing().dentistId);
+      allow list: if isSignedIn() && resource.data.dentistId == request.auth.uid;
+      allow update: if isSignedIn() && isDentist(existing().dentistId) && 
+                      isValidPatient(incoming()) &&
+                      incoming().dentistId == existing().dentistId; // Immutable owner
+      allow delete: if isSignedIn() && isDentist(existing().dentistId);
+
+      // Sub-collections
+      match /records/{recordId} {
+        allow create: if isSignedIn() && isDentistOfPatient(patientId) && isValidRecord(incoming());
+        allow list, get: if isSignedIn() && isDentistOfPatient(patientId);
+      }
+
+      match /documents/{docId} {
+        allow create: if isSignedIn() && isDentistOfPatient(patientId) && isValidDocument(incoming(), patientId);
+        allow list, get: if isSignedIn() && isDentistOfPatient(patientId);
+      }
+
+      match /odontograms/{odoId} {
+        allow create: if isSignedIn() && isDentistOfPatient(patientId) && isValidOdontogram(incoming());
+        allow list, get: if isSignedIn() && isDentistOfPatient(patientId);
+      }
+
+      match /budgets/{budgetId} {
+        allow create: if isSignedIn() && isDentistOfPatient(patientId) && isValidBudget(incoming());
+        allow list, get: if isSignedIn() && isDentistOfPatient(patientId);
+        allow update: if isSignedIn() && isDentistOfPatient(patientId) && isValidBudget(incoming());
+      }
+
+      match /appointments/{aptId} {
+        allow create: if isSignedIn() && isDentistOfPatient(patientId) && isValidAppointment(incoming(), patientId);
+        allow list, get: if isSignedIn() && isDentistOfPatient(patientId);
+      }
+    }
+  }
+}

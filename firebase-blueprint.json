@@ -1,0 +1,94 @@
+{
+  "entities": {
+    "Patient": {
+      "title": "Patient",
+      "description": "Patient information and primary association with a dentist.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "First name of the patient" },
+        "lastName": { "type": "string", "description": "Last name of the patient" },
+        "dni": { "type": "string", "description": "National ID number" },
+        "birthDate": { "type": "string", "format": "date", "description": "Date of birth" },
+        "phone": { "type": "string", "description": "Contact phone number" },
+        "email": { "type": "string", "format": "email", "description": "Contact email" },
+        "address": { "type": "string", "description": "Home address" },
+        "dentistId": { "type": "string", "description": "UID of the dentist who owns this record" },
+        "createdAt": { "type": "number", "description": "Unix timestamp of creation" }
+      },
+      "required": ["name", "lastName", "dni", "dentistId", "createdAt"]
+    },
+    "ClinicalRecord": {
+      "title": "Clinical Record",
+      "description": "A single entry in the patient's clinical history.",
+      "type": "object",
+      "properties": {
+        "date": { "type": "number", "description": "Unix timestamp of the record" },
+        "diagnosis": { "type": "string", "description": "Clinical diagnosis" },
+        "treatment": { "type": "string", "description": "Treatment performed" },
+        "notes": { "type": "string", "description": "Additional clinical notes" }
+      },
+      "required": ["date", "diagnosis"]
+    },
+    "MedicalDocument": {
+      "title": "Medical Document",
+      "description": "Metadata for an uploaded medical document (image/pdf).",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string", "description": "Filename or display name" },
+        "type": { "type": "string", "enum": ["XRAY", "PHOTO", "LAB", "OTHER"] },
+        "url": { "type": "string", "description": "Storage URL (or placeholder)" },
+        "patientId": { "type": "string", "description": "Reference to the patient" },
+        "createdAt": { "type": "number", "description": "Unix timestamp" }
+      },
+      "required": ["name", "type", "patientId", "createdAt"]
+    },
+    "Odontogram": {
+      "title": "Odontogram State",
+      "description": "Recording of dental markings for a patient at a specific time.",
+      "type": "object",
+      "properties": {
+        "markings": { 
+          "type": "array",
+          "description": "List of tooth conditions and surfaces"
+        },
+        "dentistId": { "type": "string", "description": "UID of the dentist" },
+        "updatedAt": { "type": "number", "description": "Unix timestamp" }
+      },
+      "required": ["markings", "dentistId", "updatedAt"]
+    },
+    "Budget": {
+      "title": "Budget",
+      "description": "Financial proposal for dental treatments.",
+      "type": "object",
+      "properties": {
+        "total": { "type": "number", "description": "Total amount" },
+        "status": { "type": "string", "enum": ["DRAFT", "SENT", "ACCEPTED", "REJECTED"] },
+        "dentistId": { "type": "string", "description": "UID of the dentist" },
+        "createdAt": { "type": "number", "description": "Unix timestamp" },
+        "items": { "type": "array", "description": "List of procedures and prices" }
+      },
+      "required": ["total", "status", "dentistId", "createdAt"]
+    },
+    "Appointment": {
+      "title": "Appointment",
+      "description": "Scheduled dental consultation.",
+      "type": "object",
+      "properties": {
+        "patientId": { "type": "string", "description": "Reference to patient" },
+        "dentistId": { "type": "string", "description": "Reference to dentist" },
+        "date": { "type": "number", "description": "Unix timestamp" },
+        "reason": { "type": "string", "description": "Reason for visit" },
+        "status": { "type": "string", "enum": ["SCHEDULED", "COMPLETED", "CANCELLED"] }
+      },
+      "required": ["patientId", "dentistId", "date", "reason", "status"]
+    }
+  },
+  "firestore": {
+    "/patients": { "schema": "Patient", "description": "Root collection for patients" },
+    "/patients/{patientId}/records": { "schema": "ClinicalRecord", "description": "Clinical history entries" },
+    "/patients/{patientId}/documents": { "schema": "MedicalDocument", "description": "Uploaded media metadata" },
+    "/patients/{patientId}/odontograms": { "schema": "Odontogram", "description": "Odontogram snapshots" },
+    "/patients/{patientId}/budgets": { "schema": "Budget", "description": "Treatment budgets" },
+    "/patients/{patientId}/appointments": { "schema": "Appointment", "description": "Patient appointments" }
+  }
+}
