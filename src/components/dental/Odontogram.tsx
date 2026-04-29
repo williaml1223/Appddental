@@ -218,24 +218,24 @@ export default function Odontogram() {
   const currentLower = isPediatric ? PEDIATRIC_LOWER_ARCH : LOWER_ARCH;
 
   return (
-    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col xl:flex-row min-h-[850px]">
-      {/* Sidebar Controls */}
-      <div className="w-full xl:w-96 border-b xl:border-b-0 xl:border-r border-slate-100 p-8 md:p-10 space-y-8 md:space-y-10 bg-slate-50/50 shrink-0">
+    <div className="bg-white rounded-[2.5rem] border border-slate-200 shadow-sm overflow-hidden flex flex-col lg:flex-row min-h-[700px] lg:min-h-[850px]">
+      {/* Sidebar Controls - Optimized for all screens */}
+      <div className="w-full lg:w-80 xl:w-96 border-b lg:border-b-0 lg:border-r border-slate-100 p-6 md:p-8 lg:p-10 space-y-6 md:space-y-8 bg-slate-50/50 shrink-0">
         <div>
           {patient && (
-            <div className="mb-10 pb-8 border-b border-slate-200">
+            <div className="mb-6 lg:mb-10 pb-6 lg:pb-8 border-b border-slate-200">
               <p className="text-[10px] font-black uppercase text-indigo-400 tracking-widest mb-2">Paciente en Atención</p>
-              <h2 className="text-2xl font-black text-slate-800 tracking-tight leading-none uppercase">{patient.name}</h2>
+              <h2 className="text-xl lg:text-2xl font-black text-slate-800 tracking-tight leading-none uppercase truncate">{patient.name}</h2>
               <p className="text-[10px] font-bold text-slate-400 mt-2">DNI: {patient.dni}</p>
             </div>
           )}
 
           <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Dentición</h3>
-          <div className="flex p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm mb-8">
+          <div className="flex p-1.5 bg-white rounded-2xl border border-slate-200 shadow-sm mb-8 overflow-x-auto no-scrollbar">
             <button 
               onClick={() => setViewMode('adult')}
               className={cn(
-                "flex-1 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+                "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap px-4",
                 viewMode === 'adult' ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400 hover:text-slate-600"
               )}
             >
@@ -244,7 +244,7 @@ export default function Odontogram() {
             <button 
               onClick={() => setViewMode('pediatric')}
               className={cn(
-                "flex-1 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+                "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap px-4",
                 viewMode === 'pediatric' ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400 hover:text-slate-600"
               )}
             >
@@ -253,7 +253,7 @@ export default function Odontogram() {
             <button 
               onClick={() => setViewMode('mixed')}
               className={cn(
-                "flex-1 py-3.5 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all",
+                "flex-1 py-3 text-[10px] font-black uppercase tracking-widest rounded-xl transition-all whitespace-nowrap px-4",
                 viewMode === 'mixed' ? "bg-indigo-600 text-white shadow-md shadow-indigo-100" : "text-slate-400 hover:text-slate-600"
               )}
             >
@@ -261,8 +261,8 @@ export default function Odontogram() {
             </button>
           </div>
 
-          <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Herramientas</h3>
-          <div className="grid grid-cols-1 gap-3.5">
+          <h3 className="text-sm font-black text-slate-400 uppercase tracking-widest mb-4">Hallazgos</h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-3.5">
             {TREATMENTS.map(t => (
               <button
                 key={t.id}
@@ -275,7 +275,7 @@ export default function Odontogram() {
                 )}
               >
                 <div className={cn("w-4 h-4 rounded-full border-2 border-white/20 shadow-sm", t.color)}></div>
-                {t.label}
+                <span className="truncate">{t.label}</span>
               </button>
             ))}
           </div>
@@ -290,7 +290,7 @@ export default function Odontogram() {
              )}
            >
              <BookOpen className="w-5 h-5" />
-             {isLearningMode ? 'Modo Estudiante ON' : 'Activar Modo Educativo'}
+             {isLearningMode ? 'Modo Guía Activo' : 'Activar Guía FDI'}
            </button>
         </div>
 
@@ -302,7 +302,7 @@ export default function Odontogram() {
           >
              <div className="flex items-center gap-3 text-indigo-700">
                 <Shield className="w-5 h-5" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Guía Clínica FDI</span>
+                <span className="text-[10px] font-black uppercase tracking-widest">Protocolo Clínico FDI</span>
              </div>
              
              <div className="space-y-3">
@@ -341,21 +341,26 @@ export default function Odontogram() {
       </div>
 
       {/* Interactive Odontogram Stage */}
-      <div className="flex-1 p-8 md:p-16 flex flex-col items-center justify-center space-y-12 md:space-y-16 relative overflow-hidden bg-slate-50/20">
+      <div className="flex-1 p-6 md:p-10 lg:p-16 flex flex-col items-center justify-start lg:justify-center space-y-10 md:space-y-16 relative overflow-hidden bg-slate-50/20">
+        <div className="lg:hidden w-full flex items-center justify-center gap-2 mb-4 text-slate-400 animate-pulse">
+           <span className="text-[10px] font-black uppercase tracking-widest">Desliza para ver piezas dentales</span>
+           <div className="w-8 h-px bg-slate-200"></div>
+        </div>
+
         <AnimatePresence>
           {validationError && (
             <motion.div 
               initial={{ opacity: 0, y: -20, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: -20, scale: 0.95 }}
-              className="absolute top-8 left-8 right-8 z-20 bg-rose-50 border border-rose-200 p-5 rounded-[2rem] flex items-center gap-4 shadow-2xl shadow-rose-100 max-w-2xl mx-auto"
+              className="absolute top-4 lg:top-8 left-4 lg:left-8 right-4 lg:right-8 z-20 bg-rose-50 border border-rose-200 p-5 rounded-[2rem] flex items-center gap-4 shadow-2xl shadow-rose-100 max-w-2xl mx-auto"
             >
-              <div className="w-12 h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-rose-200">
-                <AlertTriangle className="w-6 h-6" />
+              <div className="w-10 h-10 lg:w-12 lg:h-12 bg-rose-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-rose-200">
+                <AlertTriangle className="w-5 h-5 lg:w-6 lg:h-6" />
               </div>
               <div>
-                <p className="text-[10px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Validación de Protocolo</p>
-                <p className="text-sm text-rose-800 font-bold leading-tight">{validationError}</p>
+                <p className="text-[9px] lg:text-[10px] font-black text-rose-500 uppercase tracking-widest mb-0.5">Nota de Tratamiento</p>
+                <p className="text-xs lg:text-sm text-rose-800 font-bold leading-tight">{validationError}</p>
               </div>
             </motion.div>
           )}
@@ -366,15 +371,15 @@ export default function Odontogram() {
              <div className="w-16 h-16 bg-white rounded-3xl shadow-xl flex items-center justify-center">
                 <Loader2 className="w-8 h-8 animate-spin text-indigo-600" />
              </div>
-             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Sincronizando diagrama dental...</p>
+             <p className="text-[10px] font-black uppercase text-slate-400 tracking-widest">Cargando Odontodiagrama...</p>
           </div>
         )}
         
-        <div className="w-full overflow-x-auto no-scrollbar pb-10">
-          <div className="flex flex-col gap-12 min-w-[1000px] w-full px-8">
+        <div className="w-full overflow-x-auto no-scrollbar pb-10 cursor-grab active:cursor-grabbing px-4">
+          <div className="flex flex-col gap-10 lg:gap-14 min-w-[950px] lg:min-w-[1100px] w-full px-4 lg:px-8">
             {/* Adult Upper Arch */}
             {(viewMode === 'adult' || viewMode === 'mixed') && (
-              <div className="grid grid-cols-16 gap-3">
+              <div className="grid grid-cols-16 gap-2 lg:gap-3">
                 {UPPER_ARCH.map(num => (
                   <ToothComponent 
                     key={num} 
@@ -391,7 +396,7 @@ export default function Odontogram() {
             {/* Pediatric Upper Arch */}
             {(viewMode === 'pediatric' || viewMode === 'mixed') && (
               <div className={cn(
-                "grid gap-4 px-24 md:px-32",
+                "grid gap-4 px-24 md:px-32 lg:px-48",
                 viewMode === 'mixed' ? "grid-cols-10 scale-90 -mt-10" : "grid-cols-10"
               )}>
                 {PEDIATRIC_UPPER_ARCH.map(num => (
@@ -407,16 +412,16 @@ export default function Odontogram() {
               </div>
             )}
 
-            <div className="h-px bg-slate-200/50 w-full relative my-8">
-               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-8 py-2 border border-slate-100 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shadow-sm">
-                  Línea de Oclusión • Arco Maxilar / Mandibular
+            <div className="h-px bg-slate-200/50 w-full relative my-6 lg:my-8">
+               <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-6 lg:px-8 py-2 border border-slate-100 rounded-full text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap shadow-sm">
+                  Línea de Oclusión • Arco Dental
                </div>
             </div>
 
             {/* Pediatric Lower Arch */}
             {(viewMode === 'pediatric' || viewMode === 'mixed') && (
               <div className={cn(
-                "grid gap-4 px-24 md:px-32",
+                "grid gap-4 px-24 md:px-32 lg:px-48",
                 viewMode === 'mixed' ? "grid-cols-10 scale-90 -mb-10" : "grid-cols-10"
               )}>
                 {PEDIATRIC_LOWER_ARCH.map(num => (
@@ -434,7 +439,7 @@ export default function Odontogram() {
 
             {/* Adult Lower Arch */}
             {(viewMode === 'adult' || viewMode === 'mixed') && (
-              <div className="grid grid-cols-16 gap-3">
+              <div className="grid grid-cols-16 gap-2 lg:gap-3">
                 {LOWER_ARCH.map(num => (
                   <ToothComponent 
                     key={num} 
@@ -450,18 +455,18 @@ export default function Odontogram() {
           </div>
         </div>
 
-        <div className="flex flex-wrap items-center gap-10 pt-10 border-t border-slate-100 w-full justify-center">
+        <div className="flex flex-wrap items-center gap-6 lg:gap-10 pt-8 lg:pt-10 border-t border-slate-100 w-full justify-center">
            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 bg-rose-500 rounded-md border-2 border-white shadow-sm"></div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Caries Hallada</span>
+              <div className="w-4 h-4 bg-rose-500 rounded-md border-2 border-white shadow-sm ring-1 ring-rose-100"></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Caries</span>
            </div>
            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 bg-blue-500 rounded-md border-2 border-white shadow-sm"></div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Obturación Existente</span>
+              <div className="w-4 h-4 bg-blue-500 rounded-md border-2 border-white shadow-sm ring-1 ring-blue-100"></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Obturación</span>
            </div>
            <div className="flex items-center gap-3">
-              <div className="w-4 h-4 bg-emerald-500 rounded-md border-2 border-white shadow-sm"></div>
-              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Trat. Conductos</span>
+              <div className="w-4 h-4 bg-emerald-500 rounded-md border-2 border-white shadow-sm ring-1 ring-emerald-100"></div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Conducto</span>
            </div>
            <div className="flex items-center gap-3 text-indigo-600 bg-indigo-50 px-5 py-2 rounded-full shadow-inner">
               <Shield className="w-3.5 h-3.5" />
